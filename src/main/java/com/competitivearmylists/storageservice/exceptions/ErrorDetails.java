@@ -1,18 +1,37 @@
 package com.competitivearmylists.storageservice.exceptions;
 
-import java.util.Date;
+import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.List;
 
 public class ErrorDetails {
-    private String description;
-    private String errorMessage;
-    private Date date;
-    private String stackTrace;
 
-    public ErrorDetails(Date date, String errorMessage, String description, String stackTrace) {
+    private LocalDateTime timestamp; // Error occurrence time
+    private String message;          // High-level error message
+    private String description;      // Contextual details
+    private Object details;          // Stack trace or field errors (dynamic content)
+
+    public ErrorDetails(LocalDateTime timestamp, String message, String description, Object details) {
+        this.timestamp = timestamp;
+        this.message = message;
         this.description = description;
-        this.errorMessage = errorMessage;
-        this.date = date;
-        this.stackTrace = stackTrace;
+        this.details = details;
+    }
+
+    public LocalDateTime getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(LocalDateTime timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
     }
 
     public String getDescription() {
@@ -23,27 +42,11 @@ public class ErrorDetails {
         this.description = description;
     }
 
-    public String getErrorMessage() {
-        return errorMessage;
+    public Object getDetails() {
+        return details;
     }
 
-    public void setErrorMessage(String errorMessage) {
-        this.errorMessage = errorMessage;
-    }
-
-    public Date getDate() {
-        return date;
-    }
-
-    public void setDate(Date date) {
-        this.date = date;
-    }
-
-    public String getStackTrace() {
-        return stackTrace;
-    }
-
-    public void setStackTrace(String stackTrace) {
-        this.stackTrace = stackTrace;
+    public void setDetails(Object details) {
+        this.details = details;
     }
 }
