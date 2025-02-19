@@ -1,8 +1,10 @@
 package com.competitivearmylists.storageservice.exceptions;
 
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -12,69 +14,87 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+/**
+ * Global exception handler for handling application-wide exceptions.
+ * This class extends ResponseEntityExceptionHandler to handle validation and runtime errors globally.
+ */
 @ControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     /**
      * Handles validation failures for request bodies and query parameters.
-     * Overrides the default implementation to add custom error details.
+     * Overrides the default implementation to provide custom error details.
+     *
+     * @param ex      The exception thrown when validation fails.
+     * @param headers HTTP headers of the request.
+     * @param status  The HTTP status code.
+     * @param request The web request that resulted in the exception.
+     * @return A ResponseEntity containing custom error details.
      */
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(
             MethodArgumentNotValidException ex,
             HttpHeaders headers,
-            HttpStatus status, // FIXED: Correct parameter type
+            HttpStatusCode status,
             WebRequest request) {
 
-        // Collect field errors
+        // Collect field validation errors
         Map<String, String> fieldErrors = ex.getBindingResult()
                 .getFieldErrors()
                 .stream()
                 .collect(Collectors.toMap(
-                        error -> error.getField(),
-                        error -> error.getDefaultMessage(),
-                        (existing, replacement) -> existing
+                        FieldError::getField,
+                        error -> Objects.requireNonNullElse(error.getDefaultMessage(), "Unknown validation error"),
+                        (existing, replacement) -> existing // Prevents duplicate keys
                 ));
 
-        // Build error details object
+        // Create error response details
         ErrorDetails errorDetails = new ErrorDetails(
                 LocalDateTime.now(),
                 "Validation Failed",
                 request.getDescription(false),
-                fieldErrors
+                fieldErrors.toString() // Convert to String to align with ErrorDetails update
         );
 
-        return new ResponseEntity<>(errorDetails, HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(errorDetails, headers, status);
     }
 
     /**
      * Handles generic exceptions and returns a 500 response with stack trace details.
+     *
+     * @param ex      The exception that occurred.
+     * @param request The web request that resulted in the exception.
+     * @return A ResponseEntity containing error details including stack trace.
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorDetails> handleGlobalException(Exception ex, WebRequest request) {
 
-        // Collect stack trace as a list of strings
-        List<String> stackTrace = ex.getStackTrace() != null ?
-                List.of(ex.getStackTrace()).stream()
-                        .map(StackTraceElement::toString)
-                        .collect(Collectors.toList()) :
-                null;
+        // Convert stack trace to a readable format
+        List<String> stackTrace = Stream.of(ex.getStackTrace())
+                .map(StackTraceElement::toString)
+                .toList();
 
-        // Build error details object
+        // Create error response details
         ErrorDetails errorDetails = new ErrorDetails(
                 LocalDateTime.now(),
                 "An unexpected error occurred",
                 request.getDescription(false),
-                stackTrace
+                stackTrace.toString() // Convert list to String
         );
 
-        return new ResponseEntity<>(errorDetails, HttpStatus.INTERNAL_SERVER_ERROR);
+        return new ResponseEntity<>(errorDetails, HttpStatusCode.valueOf(500));
     }
 
     /**
      * Handles resource not found exceptions and returns a 404 response.
+     *
+     * @param ex      The ResourceNotFoundException thrown when a resource is not found.
+     * @param request The web request that resulted in the exception.
+     * @return A ResponseEntity containing error details.
      */
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorDetails> handleResourceNotFound(ResourceNotFoundException ex, WebRequest request) {
@@ -82,8 +102,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 LocalDateTime.now(),
                 ex.getMessage(),
                 "Resource not found at " + request.getDescription(false),
-                null
+                null // No stack trace needed for 404 errors
         );
-        return new ResponseEntity<>(errorDetails, HttpStatus.NOT_FOUND);
+        return new ResponseEntity<>(errorDetails, HttpStatusCode.valueOf(404));
     }
 }
