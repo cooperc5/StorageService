@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.ToString;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  * Entity class representing a competitor's event result.
@@ -103,5 +103,8 @@ public class CompetitorEventResult {
      * - `nullable = false` ensures this field cannot be null.
      */
     @Column(name = "date", nullable = false)
-    private LocalDate date;
+    private LocalDateTime date;
+
+    @Column(name = "position", nullable = false)
+    private int position;
 }
