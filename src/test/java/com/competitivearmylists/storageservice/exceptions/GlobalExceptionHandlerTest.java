@@ -36,7 +36,7 @@ class GlobalExceptionHandlerTest {
      * Ensures field-specific error messages are captured
      * and returned in the response with status 400 (Bad Request).
      */
-   /* @Test
+    @Test
     void testHandleValidationExceptions() {
         // Arrange
         MethodArgumentNotValidException exception = mock(MethodArgumentNotValidException.class);
@@ -59,7 +59,7 @@ class GlobalExceptionHandlerTest {
         Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
         assertThat(responseBody.get("description")).isEqualTo("/test/validation");
         assertThat(responseBody.get("details")).isNotNull();
-    }*/
+    }
 
     /**
      * Tests that a resource not found exception is properly handled.
